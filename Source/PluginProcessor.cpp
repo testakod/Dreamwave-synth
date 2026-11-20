@@ -231,6 +231,8 @@ void DreamwaveProcessor::setCurrentProgram (int index)
     for (const auto& [id, value] : presets[(size_t) index].values)
         if (auto* p = apvts.getParameter (kParamIds[id]))
             p->setValueNotifyingHost (p->convertTo0to1 (value));
+
+    ++presetChangeCount;
 }
 
 void DreamwaveProcessor::resetAllToDefaults()
@@ -275,6 +277,7 @@ bool DreamwaveProcessor::saveUserPreset (const juce::String& name)
         {
             currentPresetName = file.getFileNameWithoutExtension();
             userPresetActive = true;
+            ++presetChangeCount;
             return true;
         }
     return false;
@@ -296,6 +299,7 @@ bool DreamwaveProcessor::loadPresetFile (const juce::File& file)
     if (file.getParentDirectory() != dir && dir.createDirectory().wasOk())
         file.copyFileTo (dir.getChildFile (file.getFileName()));
 
+    ++presetChangeCount;
     return true;
 }
 
@@ -324,6 +328,7 @@ void DreamwaveProcessor::setStateInformation (const void* data, int sizeInBytes)
             currentPresetName = state.getProperty ("presetName", "").toString();
             userPresetActive = (bool) state.getProperty ("userPreset", false);
             apvts.replaceState (state);
+            ++presetChangeCount;
         }
 }
 

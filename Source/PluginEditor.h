@@ -73,7 +73,8 @@ private:
 };
 
 //==============================================================================
-class DreamwaveEditor : public juce::AudioProcessorEditor
+class DreamwaveEditor : public juce::AudioProcessorEditor,
+                        private juce::Timer
 {
 public:
     explicit DreamwaveEditor (DreamwaveProcessor&);
@@ -83,6 +84,7 @@ public:
     void resized() override;
 
 private:
+    void timerCallback() override;
     Panel* makePanel (const juce::String& title, int row);
     void refreshPresetList();
     void onPresetChosen();
@@ -91,7 +93,8 @@ private:
     void addKnob (Panel& p, ParamIndex idx, const juce::String& name);
     void addChoice (Panel& p, ParamIndex idx, const juce::String& name);
 
-    DreamwaveProcessor& processor;
+    DreamwaveProcessor& dwProcessor;   // eget namn: AudioProcessorEditor har redan 'processor'
+    int lastPresetChangeCount = -1;
     DreamLookAndFeel laf;
 
     juce::ComboBox presetBox;

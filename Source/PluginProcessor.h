@@ -45,6 +45,9 @@ public:
     const juce::String& getCurrentPresetName() const { return currentPresetName; }
     bool isUserPresetActive() const { return userPresetActive; }
 
+    // Räknas upp när preset/tillstånd byts (även av värden), så att editorn kan uppdatera rullistan.
+    int getPresetChangeCount() const noexcept { return presetChangeCount.load(); }
+
     juce::AudioProcessorValueTreeState apvts;
 
 private:
@@ -53,6 +56,7 @@ private:
     SynthParams synthParams;
     juce::String currentPresetName;
     bool userPresetActive = false;
+    std::atomic<int> presetChangeCount { 0 };
     std::atomic<float> modWheel { 0.0f };
 
     juce::Synthesiser synth;

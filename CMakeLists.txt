@@ -21,7 +21,7 @@ juce_add_plugin(DreamwaveSynth
     PRODUCT_NAME "Dreamwave Synth"
     PLUGIN_MANUFACTURER_CODE Dwav
     PLUGIN_CODE Dwsy
-    FORMATS VST3 Standalone
+    FORMATS AU VST3 Standalone
     VST3_CATEGORIES Instrument Synth
     IS_SYNTH TRUE
     NEEDS_MIDI_INPUT TRUE
@@ -34,6 +34,7 @@ target_sources(DreamwaveSynth PRIVATE
     Source/Params.h
     Source/Synth.h
     Source/Effects.h
+    Source/Presets.h
     Source/PluginProcessor.h
     Source/PluginProcessor.cpp
     Source/PluginEditor.h

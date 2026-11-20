@@ -1,0 +1,38 @@
+name: Build macOS plug-ins
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j 4
+
+      - name: Validate Audio Unit
+        run: |
+          killall -9 AudioComponentRegistrar || true
+          auval -v aumu Dwsy Dwav
+
+      - name: Sign (ad hoc) and zip
+        run: |
+          OUT=build/DreamwaveSynth_artefacts/Release
+          codesign --force --deep -s - "$OUT/VST3/Dreamwave Synth.vst3"
+          codesign --force --deep -s - "$OUT/AU/Dreamwave Synth.component"
+          ditto -c -k --keepParent "$OUT/VST3/Dreamwave Synth.vst3" DreamwaveSynth-VST3-mac.zip
+          ditto -c -k --keepParent "$OUT/AU/Dreamwave Synth.component" DreamwaveSynth-AU-mac.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DreamwaveSynth-mac
+          path: DreamwaveSynth-*-mac.zip

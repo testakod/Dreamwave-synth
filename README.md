@@ -16,6 +16,18 @@ En fristående version hamnar i `build/DreamwaveSynth_artefacts/Release/Standalo
 
 Färdiga byggen (AU + VST3, universal) finns också som artefakt under GitHub Actions → *Build macOS plug-ins*.
 
+## Tester
+
+`tests/IntegrationHost.cpp` är en liten värd som laddar det byggda AU- och VST3-pluginet som en DAW gör, spelar MIDI genom det och kontrollerar ljudet: alla presets vid 44.1/48/96 kHz och olika buffertstorlekar, tystnad utan MIDI, release-svans, velocity, röststöld, slumpade parametrar, spara/återställ tillstånd, editorn och CPU-last.
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DDREAMWAVE_BUILD_TESTS=ON
+cmake --build build --config Release -j 8
+build/tests/DwIntegrationHost_artefacts/Release/DwIntegrationHost build/DreamwaveSynth_artefacts/Release/VST3/"Dreamwave Synth.vst3" demo.wav
+```
+
+Kör med `arch -x86_64` framför för att testa under Rosetta (så som Live 10 körs på Apple Silicon). Med ett andra argument renderas alla presets till en WAV-fil. GitHub Actions kör testerna på AU och VST3 för både arm64 och x86_64 och laddar upp loggar och demo-WAV.
+
 ## Använda i Ableton Live
 
 - **Live 11/12**: Settings → Plug-Ins: slå på **Use Audio Units** och/eller **Use VST3 System Folders**, tryck **Rescan**.

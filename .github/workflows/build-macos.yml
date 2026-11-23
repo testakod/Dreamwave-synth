@@ -14,15 +14,40 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DDREAMWAVE_BUILD_TESTS=ON
 
       - name: Build
         run: cmake --build build --config Release -j 4
 
-      - name: Validate Audio Unit
+      - name: Make sure Rosetta is available (for x86_64 tests, like Live 10 on Apple Silicon)
+        run: arch -x86_64 /usr/bin/true || softwareupdate --install-rosetta --agree-to-license
+
+      - name: Validate Audio Unit (arm64 + x86_64)
         run: |
           killall -9 AudioComponentRegistrar || true
-          auval -v aumu Dwsy Dwav
+          auval -strict -v aumu Dwsy Dwav
+          arch -x86_64 auval -strict -v aumu Dwsy Dwav
+
+      - name: Integration tests (AU + VST3, arm64 + x86_64)
+        run: |
+          HOST=build/tests/DwIntegrationHost_artefacts/Release/DwIntegrationHost
+          OUT=build/DreamwaveSynth_artefacts/Release
+          mkdir -p test-results
+          status=0
+          for a in arm64 x86_64; do
+            for p in "$OUT/AU/Dreamwave Synth.component" "$OUT/VST3/Dreamwave Synth.vst3"; do
+              f=$(basename "$p" | sed 's/.*\.//')
+              demo=""; [ "$a" = arm64 ] && [ "$f" = vst3 ] && demo=test-results/presets-demo.wav
+              arch -$a "$HOST" "$p" $demo | tee "test-results/$f-$a.log" || status=1
+            done
+          done
+          exit $status
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: DreamwaveSynth-test-results
+          path: test-results/
 
       - name: Sign (ad hoc) and zip
         run: |

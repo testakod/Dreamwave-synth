@@ -53,3 +53,9 @@ target_link_libraries(DreamwaveSynth
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
+
+# Integrationstest: en liten värd som laddar AU/VST3 som en DAW och kontrollerar ljudet.
+option(DREAMWAVE_BUILD_TESTS "Build the integration test host" OFF)
+if(DREAMWAVE_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

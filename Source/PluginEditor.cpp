@@ -92,7 +92,7 @@ void Panel::resized()
 
 //==============================================================================
 DreamwaveEditor::DreamwaveEditor (DreamwaveProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
+    : AudioProcessorEditor (&p), dwProcessor (p)
 {
     setLookAndFeel (&laf);
 
@@ -177,7 +177,7 @@ DreamwaveEditor::DreamwaveEditor (DreamwaveProcessor& p)
 
     saveButton.onClick   = [this] { showSaveDialog(); };
     loadButton.onClick   = [this] { showLoadDialog(); };
-    folderButton.onClick = [this]
+    folderButton.onClick = []
     {
         auto dir = DreamwaveProcessor::getUserPresetDir();
         dir.createDirectory();
@@ -192,21 +192,36 @@ DreamwaveEditor::DreamwaveEditor (DreamwaveProcessor& p)
     addAndMakeVisible (presetLabel);
 
     setSize (1000, 56 + 4 * (Panel::titleH + Panel::cellH + Panel::pad + 8) + 8);
+
+    // Värden kan byta program eller återställa ett sparat set medan editorn är öppen.
+    lastPresetChangeCount = dwProcessor.getPresetChangeCount();
+    startTimerHz (4);
 }
 
 DreamwaveEditor::~DreamwaveEditor()
 {
+    stopTimer();
     setLookAndFeel (nullptr);
+}
+
+void DreamwaveEditor::timerCallback()
+{
+    const int count = dwProcessor.getPresetChangeCount();
+    if (count != lastPresetChangeCount)
+    {
+        lastPresetChangeCount = count;
+        refreshPresetList();
+    }
 }
 
 void DreamwaveEditor::refreshPresetList()
 {
     presetBox.clear (juce::dontSendNotification);
 
-    for (int i = 0; i < processor.getNumPrograms(); ++i)
-        presetBox.addItem (processor.getProgramName (i), i + 1);
+    for (int i = 0; i < dwProcessor.getNumPrograms(); ++i)
+        presetBox.addItem (dwProcessor.getProgramName (i), i + 1);
 
-    const auto user = processor.getUserPresetNames();
+    const auto user = dwProcessor.getUserPresetNames();
     if (user.size() > 0)
     {
         presetBox.addSeparator();
@@ -215,8 +230,8 @@ void DreamwaveEditor::refreshPresetList()
             presetBox.addItem (user[i], 1001 + i);
     }
 
-    const int userIdx = processor.isUserPresetActive() ? user.indexOf (processor.getCurrentPresetName()) : -1;
-    presetBox.setSelectedId (userIdx >= 0 ? 1001 + userIdx : processor.getCurrentProgram() + 1,
+    const int userIdx = dwProcessor.isUserPresetActive() ? user.indexOf (dwProcessor.getCurrentPresetName()) : -1;
+    presetBox.setSelectedId (userIdx >= 0 ? 1001 + userIdx : dwProcessor.getCurrentProgram() + 1,
                              juce::dontSendNotification);
 }
 
@@ -225,20 +240,20 @@ void DreamwaveEditor::onPresetChosen()
     const int id = presetBox.getSelectedId();
     if (id >= 1001)
     {
-        const auto names = processor.getUserPresetNames();
+        const auto names = dwProcessor.getUserPresetNames();
         if (juce::isPositiveAndBelow (id - 1001, names.size()))
-            processor.loadUserPreset (names[id - 1001]);
+            dwProcessor.loadUserPreset (names[id - 1001]);
     }
     else if (id > 0)
     {
-        processor.setCurrentProgram (id - 1);
+        dwProcessor.setCurrentProgram (id - 1);
     }
 }
 
 void DreamwaveEditor::showSaveDialog()
 {
     auto* w = new juce::AlertWindow ("Save preset", "Name your preset:", juce::MessageBoxIconType::NoIcon);
-    w->addTextEditor ("name", processor.getCurrentPresetName().isEmpty() ? "My Preset" : processor.getCurrentPresetName());
+    w->addTextEditor ("name", dwProcessor.getCurrentPresetName().isEmpty() ? "My Preset" : dwProcessor.getCurrentPresetName());
     w->addButton ("Save", 1, juce::KeyPress (juce::KeyPress::returnKey));
     w->addButton ("Cancel", 0, juce::KeyPress (juce::KeyPress::escapeKey));
 
@@ -250,7 +265,7 @@ void DreamwaveEditor::showSaveDialog()
             return;
 
         const auto name = owner->getTextEditorContents ("name").trim();
-        if (name.isNotEmpty() && safeThis->processor.saveUserPreset (name))
+        if (name.isNotEmpty() && safeThis->dwProcessor.saveUserPreset (name))
             safeThis->refreshPresetList();
     }), false);
 }
@@ -268,7 +283,7 @@ void DreamwaveEditor::showLoadDialog()
         const auto file = fc.getResult();
         if (file.existsAsFile())
         {
-            safeThis->processor.loadPresetFile (file);
+            safeThis->dwProcessor.loadPresetFile (file);
             safeThis->refreshPresetList();
         }
     });
@@ -284,12 +299,12 @@ Panel* DreamwaveEditor::makePanel (const juce::String& title, int row)
 
 void DreamwaveEditor::addKnob (Panel& p, ParamIndex idx, const juce::String& name)
 {
-    p.addControl (std::make_unique<ParamKnob> (processor.apvts, idx, name));
+    p.addControl (std::make_unique<ParamKnob> (dwProcessor.apvts, idx, name));
 }
 
 void DreamwaveEditor::addChoice (Panel& p, ParamIndex idx, const juce::String& name)
 {
-    p.addControl (std::make_unique<ParamChoice> (processor.apvts, idx, name));
+    p.addControl (std::make_unique<ParamChoice> (dwProcessor.apvts, idx, name));
 }
 
 void DreamwaveEditor::paint (juce::Graphics& g)

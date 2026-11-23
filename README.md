@@ -1,4 +1,4 @@
-# Dreamwave Synth (VST3, macOS)
+# Dreamwave Synth (AU + VST3, macOS)
 
 Polyfonisk synt (8 röster) för dreamwave/synthwave. Byggd med JUCE 8.
 
@@ -9,15 +9,26 @@ Polyfonisk synt (8 röster) för dreamwave/synthwave. Byggd med JUCE 8.
 3. I den här mappen: `./build.sh`
 
 Första bygget hämtar JUCE automatiskt (kräver internet) och tar några minuter.
-VST3:n kopieras till `~/Library/Audio/Plug-Ins/VST3/Dreamwave Synth.vst3`.
+Pluginen kopieras automatiskt:
+- VST3 → `~/Library/Audio/Plug-Ins/VST3/Dreamwave Synth.vst3`
+- Audio Unit → `~/Library/Audio/Plug-Ins/Components/Dreamwave Synth.component`
 En fristående version hamnar i `build/DreamwaveSynth_artefacts/Release/Standalone/`.
 
-## Använda i Ableton Live 11
+Färdiga byggen (AU + VST3, universal) finns också som artefakt under GitHub Actions → *Build macOS plug-ins*.
 
-1. Live → Settings → Plug-Ins: slå på **Use VST3 System Folders**, tryck **Rescan**.
-2. Plug-ins i webbläsaren → *Dreamwave Synth* → dra till ett MIDI-spår.
+## Använda i Ableton Live
 
-Om Live vägrar ladda pluginet (osignerat): `codesign --force --deep -s - ~/Library/Audio/Plug-Ins/VST3/"Dreamwave Synth.vst3"`
+- **Live 11/12**: Settings → Plug-Ins: slå på **Use Audio Units** och/eller **Use VST3 System Folders**, tryck **Rescan**.
+- **Live 10**: använd **Audio Unit**-versionen (Live 10.0 kan inte ladda VST3). Preferences → Plug-Ins → slå på **Use Audio Units**, tryck **Rescan**. På Apple Silicon körs Live 10 under Rosetta – pluginet är universal, så det fungerar.
+
+Dra sedan *Dreamwave Synth* från Plug-ins i webbläsaren till ett MIDI-spår.
+
+Om Live vägrar ladda pluginet (osignerat):
+
+```bash
+codesign --force --deep -s - ~/Library/Audio/Plug-Ins/VST3/"Dreamwave Synth.vst3"
+codesign --force --deep -s - ~/Library/Audio/Plug-Ins/Components/"Dreamwave Synth.component"
+```
 
 ## Funktioner
 
@@ -44,6 +55,7 @@ Om Live vägrar ladda pluginet (osignerat): `codesign --force --deep -s - ~/Libr
 - `Source/Params.h` – alla parametrar (en lista styr enum och ID:n)
 - `Source/Synth.h` – röstmotorn
 - `Source/Effects.h` – delay
+- `Source/Presets.h` – fabrikspresets
 - `Source/PluginProcessor.*` – parametrar, presets, effektkedja
 - `Source/PluginEditor.*` – gränssnittet
 
